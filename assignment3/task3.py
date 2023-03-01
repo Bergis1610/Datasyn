@@ -5,6 +5,7 @@ import torch
 from torch import nn
 from dataloaders import load_cifar10
 from trainer import Trainer
+from trainer import compute_loss_and_accuracy
 
 
 class ExampleModel(nn.Module):
@@ -29,28 +30,28 @@ class ExampleModel(nn.Module):
         self.feature_extractor = nn.Sequential(
             nn.Conv2d(
                 in_channels=image_channels,
-                out_channels=64,
-                kernel_size=3,
+                out_channels=32,
+                kernel_size=5,
                 stride=1,
-                padding=0
+                padding=2
+            ),
+            nn.ReLU(),
+            nn.MaxPool2d([2, 2], stride=2),
+            nn.Conv2d(
+                in_channels=32,
+                out_channels=64,
+                kernel_size=5,
+                stride=1,
+                padding=2
             ),
             nn.ReLU(),
             nn.MaxPool2d([2, 2], stride=2),
             nn.Conv2d(
                 in_channels=64,
                 out_channels=128,
-                kernel_size=3,
+                kernel_size=5, 
                 stride=1,
-                padding=0
-            ),
-            nn.ReLU(),
-            nn.MaxPool2d([2, 2], stride=1),
-            nn.Conv2d(
-                in_channels=128,
-                out_channels=256,
-                kernel_size=3, 
-                stride=1,
-                padding=0,
+                padding=2,
             ),
             
             nn.ReLU(),
@@ -65,7 +66,7 @@ class ExampleModel(nn.Module):
         # There is no need for softmax activation function, as this is
         # included with nn.CrossEntropyLoss
         self.classifier = nn.Sequential(
-            nn.Linear(6400, 64),
+            nn.Linear(2048, 64),
             nn.ReLU(),
             nn.Linear(64, num_classes),
         )
@@ -80,7 +81,7 @@ class ExampleModel(nn.Module):
 
         batch_size = x.shape[0]
         features = self.feature_extractor(x)        
-        linear_features = features.view(batch_size, 6400) ## [batch_size, number of out]
+        linear_features = features.view(batch_size, 2048) ## [batch_size, number of out]
         out = self.classifier(linear_features)
         
 
@@ -128,7 +129,17 @@ def main():
         dataloaders
     )
     trainer.train()
-    create_plots(trainer, "task3")
+    create_plots(trainer, "task3 starting network from task2")
 
-if __name__ == "__main__":
+    train_loss, train_acc = compute_loss_and_accuracy(trainer.dataloader_train, model, torch.nn.CrossEntropyLoss())
+    print("Average training loss: ", train_loss.item() ," Average training accuracy: ", train_acc.item())
+
+    train_loss, train_acc = compute_loss_and_accuracy(trainer.dataloader_val, model, torch.nn.CrossEntropyLoss())
+    print("Average validation loss: ", train_loss.item() ," Average validation accuracy: ", train_acc.item())
+
+    train_loss, train_acc = compute_loss_and_accuracy(trainer.dataloader_test, model, torch.nn.CrossEntropyLoss())
+    print("Average testing loss: ", train_loss.item() ," Average testing accuracy: ", train_acc.item())
+
+
+if _name_ == "_main_":
     main()
