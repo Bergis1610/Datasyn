@@ -129,7 +129,7 @@ def main():
         dataloaders
     )
     trainer.train()
-    create_plots(trainer, "task3 starting network from task2")
+    create_plots(trainer, "task3 added batch normalization horizontal and vertical flip with prop 0.5")
 
     train_loss, train_acc = compute_loss_and_accuracy(trainer.dataloader_train, model, torch.nn.CrossEntropyLoss())
     print("Average training loss: ", train_loss.item() ," Average training accuracy: ", train_acc.item())
@@ -141,5 +141,5 @@ def main():
     print("Average testing loss: ", train_loss.item() ," Average testing accuracy: ", train_acc.item())
 
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
