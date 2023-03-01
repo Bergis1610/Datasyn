@@ -10,4 +10,3 @@ y = np.array(  [[1, 0, -1],
                 [1, 0, -1]])
 
 
-print(scipy.ndimage.convolve(x,y,))
