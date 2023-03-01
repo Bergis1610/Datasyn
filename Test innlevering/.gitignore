@@ -1,0 +1,15 @@
+.outputs/
+.datasets/
+datasets/
+outputs/
+.vscode
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pyg
+*.synctex.gz
