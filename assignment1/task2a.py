@@ -1,5 +1,8 @@
 import numpy as np
 import utils
+import matplotlib.pyplot as plt
+import math
+from scipy.special import logsumexp
 np.random.seed(1)
 
 
@@ -10,10 +13,19 @@ def pre_process_images(X: np.ndarray):
     Returns:
         X: images of shape [batch size, 785] in the range (-1, 1)
     """
+
     assert X.shape[1] == 784,\
         f"X.shape[1]: {X.shape[1]}, should be 784"
     # TODO implement this function (Task 2a)
-    return X
+    new_X = np.zeros((X.shape[0], X.shape[1]+1))
+
+    for i, batch in enumerate(X):
+        for j, pix in enumerate(batch): 
+            new_X[i, j] = 2*pix/255.0 - 1.0
+        
+        new_X[-1] = 1
+            
+    return new_X
 
 
 def cross_entropy_loss(targets: np.ndarray, outputs: np.ndarray) -> float:
@@ -24,19 +36,26 @@ def cross_entropy_loss(targets: np.ndarray, outputs: np.ndarray) -> float:
     Returns:
         Cross entropy error (float)
     """
+
+    N = targets.shape[0]
+
+    cp_loss =  -np.sum(targets*np.log(outputs) + (1 - targets)*np.log(1-outputs))
+    
     # TODO implement this function (Task 2a)
     assert targets.shape == outputs.shape,\
         f"Targets shape: {targets.shape}, outputs: {outputs.shape}"
-    return 0
 
+    return 1/N * cp_loss
 
 class BinaryModel:
-
     def __init__(self):
         # Define number of input nodes
-        self.I = None
-        self.w = np.zeros((self.I, 1))
-        self.grad = None
+        self.I = 785
+        self.w = np.zeros((self.I, 1)) ## (785, 1)
+        self.grad = None ## (785, 785)
+
+    def sigmoid(self, z):
+        return 1/(1+np.exp(-z)) 
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         """
@@ -46,7 +65,12 @@ class BinaryModel:
             y: output of model with shape [batch size, 1]
         """
         # TODO implement this function (Task 2a)
-        return None
+
+        y =  self.sigmoid(X@self.w)
+        
+        return y
+
+
 
     def backward(self, X: np.ndarray, outputs: np.ndarray, targets: np.ndarray) -> None:
         """
@@ -57,9 +81,12 @@ class BinaryModel:
             targets: labels/targets of each image of shape: [batch size, 1]
         """
         # TODO implement this function (Task 2a)
+
         assert targets.shape == outputs.shape,\
             f"Output shape: {outputs.shape}, targets: {targets.shape}"
-        self.grad = np.zeros_like(self.w)
+
+        self.grad = (-(targets - outputs).T @ X).T / X.shape[0]
+
         assert self.grad.shape == self.w.shape,\
             f"Grad shape: {self.grad.shape}, w: {self.w.shape}"
 
@@ -89,7 +116,8 @@ def gradient_approximation_test(model: BinaryModel, X: np.ndarray, Y: np.ndarray
         # Actual gradient
         logits = model.forward(X)
         model.backward(X, logits, Y)
-        difference = gradient_approximation - model.grad[i, 0]
+        difference = gradient_approximation - model.grad[i,0]
+        # print("diff ---> ", difference)
         assert abs(difference) <= epsilon**2,\
             f"Calculated gradient is incorrect. " \
             f"Approximation: {gradient_approximation}, actual gradient: {model.grad[i,0]}\n" \
@@ -100,6 +128,13 @@ def gradient_approximation_test(model: BinaryModel, X: np.ndarray, Y: np.ndarray
 def main():
     category1, category2 = 2, 3
     X_train, Y_train, *_ = utils.load_binary_dataset(category1, category2)
+
+
+    # img = X_train[200].reshape(28,28)
+    # plt.imshow(img)
+    # plt.show()
+
+
     X_train = pre_process_images(X_train)
     assert X_train.max(
     ) <= 1.0, f"The images (X_train) should be normalized to the range [-1, 1]"

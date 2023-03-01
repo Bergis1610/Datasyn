@@ -16,7 +16,13 @@ def calculate_accuracy(X: np.ndarray, targets: np.ndarray, model: BinaryModel) -
         Accuracy (float)
     """
     # TODO Implement this function (Task 2c)
-    accuracy = 0.0
+    out = [model.forward(X) > 0.5] # list of every element bigger than 0.5 from the model. 
+    int_out = list(map(int, out[0]))
+    targets_list = (targets.reshape((X.shape[0], )).tolist())
+    number_of_wrongs = [(i != j) for i, j in zip(int_out, targets_list)]
+
+    accuracy = (X.shape[0] - number_of_wrongs.count(True)) / X.shape[0] 
+    
     return accuracy
 
 
@@ -35,7 +41,12 @@ class LogisticTrainer(BaseTrainer):
             loss value (float) on batch
         """
         # TODO: Implement this function (task 2b)
-        loss = 0
+
+        out = self.model.forward(X_batch)
+        self.model.backward(X_batch, out, Y_batch)
+        self.model.w -= self.model.grad * self.learning_rate
+        loss = cross_entropy_loss(Y_batch, out)
+
         return loss
 
     def validation_step(self):
@@ -63,7 +74,7 @@ class LogisticTrainer(BaseTrainer):
 
 def main():
     # hyperparameters DO NOT CHANGE IF NOT SPECIFIED IN ASSIGNMENT TEXT
-    num_epochs = 50
+    num_epochs = 500
     learning_rate = 0.05
     batch_size = 128
     shuffle_dataset = False
@@ -78,6 +89,7 @@ def main():
 
     # ANY PARTS OF THE CODE BELOW THIS CAN BE CHANGED.
 
+    print("--------------------------- task 2b -----------------------------------")
     # Intialize model
     model = BinaryModel()
     # Train model
@@ -107,7 +119,9 @@ def main():
     plt.savefig("task2b_binary_train_loss.png")
     plt.show()
 
-    # Plot accuracy
+    print("------------------------------------------------\n")
+    print("-------------------------- task 2c -------------------------- \n")
+    # Plot accuracy 2c
     plt.ylim([0.93, .99])
     utils.plot_loss(train_history["accuracy"], "Training Accuracy")
     utils.plot_loss(val_history["accuracy"], "Validation Accuracy")
@@ -117,8 +131,14 @@ def main():
     plt.savefig("task2b_binary_train_accuracy.png")
     plt.show()
 
+    print("------------------------------------------------------------\n")
+
+    print("---------------------- task 2e ---------------------------- \n")
+
+
     # Task 2e - Create a comparison between training with and without shuffling
     shuffle_dataset = True
+    num_epochs = 500
     # Intialize model
     model = BinaryModel()
     # Train model
@@ -139,6 +159,7 @@ def main():
     plt.savefig("task2e_train_loss_with_shuffle.png")
     plt.show()
 
+    
     plt.ylim([0.93, .99])
     utils.plot_loss(val_history["accuracy"], "Validation Accuracy")
     utils.plot_loss(
