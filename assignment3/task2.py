@@ -4,6 +4,7 @@ import utils
 from torch import nn
 from dataloaders import load_cifar10
 from trainer import Trainer
+from trainer import compute_loss_and_accuracy
 
 
 class ExampleModel(nn.Module):
@@ -130,6 +131,16 @@ def main():
     )
     trainer.train()
     create_plots(trainer, "task2")
+    
+    train_loss, train_acc = compute_loss_and_accuracy(trainer.dataloader_train, model, nn.CrossEntropyLoss())
+    print("Average training loss: ", train_loss.item() ," Average training accuracy: ", train_acc.item())
+
+    train_loss, train_acc = compute_loss_and_accuracy(trainer.dataloader_val, model, nn.CrossEntropyLoss())
+    print("Average validation loss: ", train_loss.item() ," Average validation accuracy: ", train_acc.item())
+
+    train_loss, train_acc = compute_loss_and_accuracy(trainer.dataloader_test, model, nn.CrossEntropyLoss())
+    print("Average testing loss: ", train_loss.item() ," Average testing accuracy: ", train_acc.item())
+
 
 if __name__ == "__main__":
     main()
