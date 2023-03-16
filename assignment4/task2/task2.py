@@ -1,5 +1,5 @@
 import numpy as np
-import matrue_poslotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from tools import read_predicted_boxes, read_ground_truth_boxes
 from collections import namedtuple
 
@@ -265,8 +265,14 @@ def get_precision_recall_curve(
     """
     # Instead of going over every possible confidence score threshold to compute the PR
     # curve, we will use an approximation
-    confidence_thresholds = np.linspace(0, 1, 500)
+    confidence_thresholds = np.linspace(0, 1, 4)
+    #confidence_thresholds = 0.5
+    print(confidence_thresholds)
+
     # YOUR CODE HERE
+
+    # print("\n\n\n\n---------------------------------------------------------------")
+    # print(all_prediction_boxes)
 
     precisions = []
     recalls = []
