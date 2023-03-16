@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import matrue_poslotlib.pyplot as plt
 from tools import read_predicted_boxes, read_ground_truth_boxes
 from collections import namedtuple
 
@@ -71,35 +71,35 @@ def calculate_iou(prediction_box, gt_box):
     return iou
 
 
-def calculate_precision(num_tp, num_fp, num_fn):
+def calculate_precision(num_true_pos, num_false_pos, num_false_neg):
     """ Calculates the precision for the given parameters.
-        Returns 1 if num_tp + num_fp = 0
+        Returns 1 if num_true_pos + num_false_pos = 0
 
     Args:
-        num_tp (float): number of true positives
-        num_fp (float): number of false positives
-        num_fn (float): number of false negatives
+        num_true_pos (float): number of true positives
+        num_false_pos (float): number of false positives
+        num_false_neg (float): number of false negatives
     Returns:
         float: value of precision
     """
-    if num_tp + num_fp == 0:
+    if num_true_pos + num_false_pos == 0:
         return 1
-    return num_tp/(num_tp + num_fp)
+    return num_true_pos/(num_true_pos + num_false_pos)
 
 
-def calculate_recall(num_tp, num_fp, num_fn):
+def calculate_recall(num_true_pos, num_false_pos, num_false_neg):
     """ Calculates the recall for the given parameters.
-        Returns 0 if num_tp + num_fn = 0
+        Returns 0 if num_true_pos + num_false_neg = 0
     Args:
-        num_tp (float): number of true positives
-        num_fp (float): number of false positives
-        num_fn (float): number of false negatives
+        num_true_pos (float): number of true positives
+        num_false_pos (float): number of false positives
+        num_false_neg (float): number of false negatives
     Returns:
         float: value of recall
     """
-    if num_tp + num_fn == 0:
+    if num_true_pos + num_false_neg == 0:
         return 0
-    return num_tp/(num_tp+num_fn)
+    return num_true_pos/(num_true_pos+num_false_neg)
 
 
 def get_all_box_matches(prediction_boxes, gt_boxes, iou_threshold):
@@ -134,14 +134,19 @@ def get_all_box_matches(prediction_boxes, gt_boxes, iou_threshold):
             if iou >= iou_threshold:
                 matches.append([pred_box, gt_box, iou])
 
-    matches.sort(key=lambda x: x[2])
-
-    final_pred_boxes = np.array([x[0] for x in matches])
-    final_gt_boxes = np.array([x[1] for x in matches])
+    # print("\n\n\n\n")
+    # print("------------------------------------------------------------------")
+    # print(matches)
+    # print("\n")
 
     # Sort all matches on IoU in descending order
+    matches.sort(key=lambda x: x[2], reverse=True)
+
+    # print(matches)
 
     # Find all matches with the highest IoU threshold
+    final_pred_boxes = np.array([x[0] for x in matches])
+    final_gt_boxes = np.array([x[1] for x in matches])
 
     return final_pred_boxes, final_gt_boxes
     # END OF YOUR CODE
@@ -162,25 +167,26 @@ def calculate_individual_image_result(prediction_boxes, gt_boxes, iou_threshold)
             Each row includes [xmin, ymin, xmax, ymax]
     Returns:
         dict: containing true positives, false positives, true negatives, false negatives
-            {"true_pos": int, "false_pos": int, false_neg": int}
+            {"true_pos": int, "false_pos": int, "true_neg": int, "false_neg": int}
     """
     # YOUR CODE HERE
 
     total_predictions = prediction_boxes.shape[0]
-    total_boxes = gt_boxes.shape[0]
+    total_gts = gt_boxes.shape[0]
 
     prediction_boxes, gt_boxes = get_all_box_matches(
         prediction_boxes, gt_boxes, iou_threshold)
 
-    # since we now have filtered out the box-matches below threshold and sorted them.
-    true_positives = prediction_boxes.shape[0]
-    true_negatives = total_boxes - true_positives
+    true_pos = prediction_boxes.shape[0]
+    # True negative is not needed
+    #true_neg = total_gts - true_pos
 
-    false_positives = total_predictions - true_positives
-    false_negatives = total_boxes - true_positives
+    false_pos = total_predictions - true_pos
+    false_neg = total_gts - true_pos
 
+    # Does not return true neg as the previous function only takes 3 input parameters
+    return {"true_pos": true_pos, "false_pos": false_pos, "false_neg": false_neg}
     # END OF YOUR CODE
-    return {"true_pos": true_positives, "false_pos": false_positives, "false_neg": false_negatives}
     raise NotImplementedError
 
 
@@ -210,23 +216,23 @@ def calculate_precision_recall_all_images(
     total_precision = 0.0
     total_recall = 0.0
 
-    counter = 0
+    i = 0
 
     for prediction_boxes, gt_boxes in zip(all_prediction_boxes, all_gt_boxes):
 
         results = calculate_individual_image_result(
             prediction_boxes, gt_boxes, iou_threshold)
 
-        tp = results["true_pos"]
-        fp = results["false_pos"]
-        fn = results["false_neg"]
+        true_pos = results["true_pos"]
+        false_pos = results["false_pos"]
+        false_neg = results["false_neg"]
 
-        total_precision += calculate_precision(tp, fp, fn)
-        total_recall += calculate_recall(tp, fp, fn)
+        total_precision += calculate_precision(true_pos, false_pos, false_neg)
+        total_recall += calculate_recall(true_pos, false_pos, false_neg)
 
-        counter += 1
+        i += 1
 
-    return (total_precision/counter, total_recall/counter)
+    return (total_precision/i, total_recall/i)
 
     raise NotImplementedError
 
@@ -265,13 +271,13 @@ def get_precision_recall_curve(
     precisions = []
     recalls = []
     # Loop trough all the different confidence levels
-    for conf_tresh in confidence_thresholds:
+    for conf_treshold in confidence_thresholds:
         p_box_image = []
         # Get the prediction boxes that with more confidence than the treshold
         for i, pd_box in enumerate(all_prediction_boxes):
             p_boxes = []
             for j in range(len(pd_box)):
-                if confidence_scores[i][j] >= conf_tresh:
+                if confidence_scores[i][j] >= conf_treshold:
                     p_boxes.append(all_prediction_boxes[i][j])
 
             p_box_image.append(np.array(p_boxes))
