@@ -53,30 +53,19 @@ def calculate_iou(prediction_box, gt_box):
     #print("bottom ", bottom)
     #print("top ", top)
 
+    if left > right or bottom > top:
+        return 0
+
     intersect = (top - bottom) * (right - left)
 
-    # Compute union
+    # Compute union (height*length) = area
     pbox_area = (prediction_box[2] - prediction_box[0]) * \
         (prediction_box[3] - prediction_box[1])
     gtbox_area = (gt_box[2] - gt_box[0]) * (gt_box[3] - gt_box[1])
 
+    # Area summed minus the intersect = union
     union = pbox_area + gtbox_area - intersect
     iou = intersect / union
-
-    # Finding the edges of the intersecting box
-    x_left = max(prediction_box[0], gt_box[0])
-    x_right = min(prediction_box[2], gt_box[2])
-
-    y_top = min(prediction_box[3], gt_box[3])
-    y_bottom = max(prediction_box[1], gt_box[1])
-
-    # Checking that there is overlap
-    if x_left > x_right or y_bottom > y_top:
-        return 0
-
-    # Computing IoU
-    intersection = (x_right - x_left) * (y_top - y_bottom)
-    iou = intersection/(pbox_area + gtbox_area - intersection)
 
     assert iou >= 0 and iou <= 1
     return iou
@@ -93,14 +82,9 @@ def calculate_precision(num_tp, num_fp, num_fn):
     Returns:
         float: value of precision
     """
-    # YOUR CODE HERE
-
     if num_tp + num_fp == 0:
         return 1
-
     return num_tp/(num_tp + num_fp)
-
-    # END OF YOUR CODE
 
 
 def calculate_recall(num_tp, num_fp, num_fn):
@@ -113,13 +97,9 @@ def calculate_recall(num_tp, num_fp, num_fn):
     Returns:
         float: value of recall
     """
-    # YOUR CODE HERE
     if num_tp + num_fn == 0:
         return 0
-
     return num_tp/(num_tp+num_fn)
-
-    # END OF YOUR CODE
 
 
 def get_all_box_matches(prediction_boxes, gt_boxes, iou_threshold):
